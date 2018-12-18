@@ -21,6 +21,13 @@
 #include "jpgd.h"
 #include "stb_image.c"
 #include <ctype.h>
+#include <vector>
+#include <iostream>
+#include <string>
+#include <algorithm>
+#include <iterator>
+#include <sstream>
+
 
 #if defined(_MSC_VER)
 #define strcasecmp _stricmp
@@ -53,6 +60,7 @@ static int print_usage()
 }
 
 static char s_log_filename[256];
+static char adaptive_quantization_command[256];
 
 static void log_printf(const char *pMsg, ...)
 {
@@ -266,8 +274,10 @@ int main(int arg_c, char *ppArgs[])
     // Parse command line.
     bool run_exhausive_test = false;
     bool test_memory_compression = false;
+    bool use_adaptive_quantization = false;
     int subsampling = -1;
     bool use_jpgd = true;
+    std::vector<int> adaptive_quantization;
 
     int arg_index = 1;
     while ((arg_index < arg_c) && (ppArgs[arg_index][0] == '-')) {
@@ -307,11 +317,37 @@ int main(int arg_c, char *ppArgs[])
             use_jpgd = false;
             break;
         }
+        case 'w': {
+            use_adaptive_quantization = true;
+            strcpy_s(adaptive_quantization_command, 
+                     sizeof(adaptive_quantization_command),
+                     &ppArgs[arg_index][2]);
+            break;
+        }
         default:
             log_printf("Unrecognized option: %s\n", ppArgs[arg_index]);
             return EXIT_FAILURE;
         }
         arg_index++;
+    }
+
+    // Parse through adaptive quantization command if given. 
+    // User should provide a list of 4n numbers corresponding to
+    // x1, y1, x2, y2 of the bounding box predicted. Separators should be
+    // commas
+    if (use_adaptive_quantization) {
+        std::cout << "Calculating Adaptive Quantization" << std::endl;
+        std::string quant_command(adaptive_quantization_command);
+        std::cout << quant_command << std::endl;
+
+        // Parse a comma deliminated list of integers. 
+        std::stringstream ss(quant_command);
+
+        int i;
+        while (ss >> i) {
+            adaptive_quantization.push_back(i);
+            if (ss.peek() == ',') ss.ignore();
+        }
     }
 
     if (run_exhausive_test) {
@@ -354,6 +390,11 @@ int main(int arg_c, char *ppArgs[])
     jpge::params params;
     params.m_quality = quality_factor;
     params.m_subsampling = (subsampling < 0) ? ((actual_comps == 1) ? jpge::Y_ONLY : jpge::H2V2) : static_cast<jpge::subsampling_t>(subsampling);
+    // WFUEDIT: Add adaptive quantization to parameters if exists.
+    if (use_adaptive_quantization) {
+        params.use_aq = true;
+        params.adaptive_quantization = adaptive_quantization;
+    }
 
     // Now create the JPEG file.
     if (test_memory_compression) {

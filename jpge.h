@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <vector>
 
 #ifndef JPEG_ENCODER_H
 #define JPEG_ENCODER_H
@@ -42,8 +43,10 @@ typedef int16 dctq_t; // quantized
 enum subsampling_t { Y_ONLY = 0, H1V1 = 1, H2V1 = 2, H2V2 = 3 };
 
 // JPEG compression parameters structure.
+// WFUEDIT: Add another structure for adaptive quantization
 struct params {
-    inline params() : m_quality(85), m_subsampling(H2V2), m_no_chroma_discrim_flag(false) { }
+    inline params() : m_quality(85), m_subsampling(H2V2), m_no_chroma_discrim_flag(false),
+                      use_aq(false) { }
 
     inline bool check() const
     {
@@ -58,6 +61,8 @@ struct params {
 
     // Quality: 1-100, higher is better. Typical values are around 50-95.
     float m_quality;
+    bool use_aq;
+    std::vector<int> adaptive_quantization;
 
     // m_subsampling:
     // 0 = Y (grayscale) only

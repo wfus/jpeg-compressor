@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <cmath>
 
 #define JPGE_MAX(a,b) (((a)>(b))?(a):(b))
 #define JPGE_MIN(a,b) (((a)<(b))?(a):(b))
@@ -649,8 +650,8 @@ void image::load_block(dct_t *pDst, int x, int y)
 
 inline dct_t image::blend_dual(int x, int y, image &luma)
 {
-    dct_t a = 129-abs(luma.get_px(x,  y));
-    dct_t b = 129-abs(luma.get_px(x+1,y));
+    dct_t a = 129-std::abs(luma.get_px(x,  y));
+    dct_t b = 129-std::abs(luma.get_px(x+1,y));
     return (get_px(x,  y)*a
           + get_px(x+1,y)*b) / (a+b);
 }
